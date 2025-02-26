@@ -1,0 +1,152 @@
+services:
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    depends_on:
+      - chat_service
+      - web_app
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=DEBUG"
+
+    ports:
+      - "3000:80"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - traefik_net
+
+  keycloak:
+    image: "quay.io/keycloak/keycloak:latest"
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_LOGLEVEL: INFO
+    ports:
+      - "8082:8080"
+    command:
+      - start-dev
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./paw_connect.json:/tmp/paw_connect.json
+    networks:
+      - traefik_net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=changeme
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - traefik_net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.6.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - traefik_net
+
+  web_app:
+    image: web_app:latest
+    container_name: web_app
+    ports:
+      - "3005:80" # Frontend available at http://localhost:3000
+    volumes:
+      - ../web-app:/app
+      - node_modules:/app/node_modules
+    environment:
+      ENV_VAR_REACT_APP_CHAT_SERVICE_URL: http://localhost:3000
+      ENV_VAR_KEYCLOAK_URL: http://localhost:8082/realms/paw_connect
+      ENV_VAR_KEYCLOAK_CLIENT_ID: web-app
+      CHOKIDAR_USEPOLLING: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web_app.rule=Host(`localhost`)"
+      - "traefik.http.routers.web_app.entrypoints=web"
+      - "traefik.http.routers.web_app.priority=3"
+
+    networks:
+      - traefik_net
+
+  chat_service:
+    image: chat_service:latest
+    volumes:
+      - ../chat-api:/app
+    container_name: chat_service
+    ports:
+      - "8002:8000"
+    depends_on:
+      - redis
+      - chat_db
+      - elasticsearch
+      - keycloak
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:password@chat_db:5432/chat_db
+      - REDIS_HOST=redis
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080 # or your internal URL if needed
+      - KEYCLOAK_REALM=paw_connect
+      - KEYCLOAK_ADMIN_CLIENT_SECRET=gt1mPvzJ3MVkyfs4RfaH6pJx8z1hpbKJ
+      - KEYCLOAK_CLIENT_ID=chat-service
+      - KEYCLOAK_CLIENT_SECRET=0T6BYixnHhjEdiv8vnMMKJDiiIqM5IJu
+      - KEYCLOAK_CALLBACK_URI=http://localhost:3000/
+      - PYTHONUNBUFFERED=1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat_service.rule=PathPrefix(`/ws/chat`)"
+      - "traefik.http.routers.chat_service.entrypoints=web"
+      - "traefik.http.routers.chat_api.rule=PathPrefix(`/api/chat`)"
+      - "traefik.http.routers.chat_api.entrypoints=web"
+      - "traefik.http.routers.chat_service.priority=5"
+      - "traefik.http.routers.chat_api.priority=5"
+    networks:
+      - traefik_net
+
+  chat_db:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: chat_db
+    volumes:
+      - postgres_data_chat_db:/var/lib/postgresql/data
+    networks:
+      - traefik_net
+
+  redis:
+    image: "redis:latest"
+    container_name: redis_chat
+    ports:
+      - "6379:6379"
+    networks:
+      - traefik_net
+
+networks:
+  traefik_net:
+    driver: bridge
+
+volumes:
+  keycloak_data:
+  elasticsearch_data:
+  postgres_data_chat_db:
+  node_modules:
