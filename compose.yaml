@@ -5,6 +5,8 @@ services:
     depends_on:
       - chat_service
       - web_app
+      - user_service
+      - blog_service
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -213,11 +215,15 @@ services:
       - KEYCLOAK_CALLBACK_URI=http://localhost:3000/
       - KEYCLOAK_CLIIENT_PUBLIC_KEY=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx3V7fKMuAO055R158iL18lehMdjFOZr1P7tmvrbQK3v/9hgbB6ROhOAmT1Aj+ml7rNMb+eMeJEPvDuE5sQm9hMUAU88bWC/pqWyCIegEEWEixeItUrBZLxEsmWagF5wFc90juNxu0qXEf2r/oKuRSdWuJXRx4IRkZm24XzlTLI/z7DZUvRL3t4e/XpnLgb8dVRw/xSmrqAFnbXbRaESDpp77KhTKlhxkVBiT5rBKRwAwI3a7kEYEFtvX3wpRimGPOh/uogtbHn1wKPmFLfpcchu6eIozvWTcVPkfPPSqOwS7HyYlHUdMS+MSjKlmM9dBCh81kgxRWbXLkz0vf6dQ3QIDAQAB
       - PYTHONUNBUFFERED=1
+      - MINIO_HOST=minio:9000
+      - MINIO_ACCESS_KEY=minio_access_key
+      - MINIO_SECRET_KEY=minio_secret_key
+      - MINIO_BUCKET=blog-media
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.user_api.rule=PathPrefix(`/api/blog`)"
-      - "traefik.http.routers.user_api.entrypoints=web"
-      - "traefik.http.routers.user_api.priority=5"
+      - "traefik.http.routers.blog_api.rule=PathPrefix(`/api/blog`)"
+      - "traefik.http.routers.blog_api.entrypoints=web"
+      - "traefik.http.routers.blog_api.priority=5"
     networks:
       - traefik_net
     command:
@@ -253,6 +259,21 @@ services:
     networks:
       - traefik_net
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio_access_key
+      MINIO_ROOT_PASSWORD: minio_secret_key
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+        - traefik_net
+
 networks:
   traefik_net:
     driver: bridge
@@ -264,3 +285,4 @@ volumes:
   postgres_data_user_db:
   postgres_data_blog_db:
   node_modules:
+  minio-data:
