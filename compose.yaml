@@ -191,6 +191,52 @@ services:
     networks:
       - traefik_net
 
+  blog_service:
+    image: blog_service:latest
+    volumes:
+      - ../blog_api:/app
+    container_name: blog_service
+    ports:
+      - "8004:8000"
+    depends_on:
+      - blog_db
+      - elasticsearch
+      - keycloak
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:password@blog_db:5432/blog_db
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=paw_connect
+      - KEYCLOAK_ADMIN_CLIENT_SECRET=wSVxDu1FL5SIbdDlqEpr9wohnB8bxYO7
+      - KEYCLOAK_CLIENT_ID=chat-service
+      - KEYCLOAK_CLIENT_SECRET=0T6BYixnHhjEdiv8vnMMKJDiiIqM5IJu
+      - KEYCLOAK_CALLBACK_URI=http://localhost:3000/
+      - KEYCLOAK_CLIIENT_PUBLIC_KEY=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx3V7fKMuAO055R158iL18lehMdjFOZr1P7tmvrbQK3v/9hgbB6ROhOAmT1Aj+ml7rNMb+eMeJEPvDuE5sQm9hMUAU88bWC/pqWyCIegEEWEixeItUrBZLxEsmWagF5wFc90juNxu0qXEf2r/oKuRSdWuJXRx4IRkZm24XzlTLI/z7DZUvRL3t4e/XpnLgb8dVRw/xSmrqAFnbXbRaESDpp77KhTKlhxkVBiT5rBKRwAwI3a7kEYEFtvX3wpRimGPOh/uogtbHn1wKPmFLfpcchu6eIozvWTcVPkfPPSqOwS7HyYlHUdMS+MSjKlmM9dBCh81kgxRWbXLkz0vf6dQ3QIDAQAB
+      - PYTHONUNBUFFERED=1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user_api.rule=PathPrefix(`/api/blog`)"
+      - "traefik.http.routers.user_api.entrypoints=web"
+      - "traefik.http.routers.user_api.priority=5"
+    networks:
+      - traefik_net
+    command:
+      - "sh"
+      - "-c"
+      - "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  blog_db:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: blog_db
+    volumes:
+      - postgres_data_blog_db:/var/lib/postgresql/data
+    networks:
+      - traefik_net
+
+
   prometheus:
     image: prom/prometheus
     volumes:
@@ -216,4 +262,5 @@ volumes:
   elasticsearch_data:
   postgres_data_chat_db:
   postgres_data_user_db:
+  postgres_data_blog_db:
   node_modules:
