@@ -329,7 +329,7 @@ services:
         - traefik_net
 
   celery:
-    build: .
+    build: ../blog_api/
     command: celery -A worker.celery_app worker --loglevel=info
     depends_on:
       - rabbitmq
