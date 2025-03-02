@@ -11,3 +11,6 @@ scrape_configs:
   - job_name: 'channels_service'
     static_configs:
       - targets: ['channels_service:8000']
+  - job_name: 'chat_service'
+    static_configs:
+      - targets: ['chat_service:8000']
