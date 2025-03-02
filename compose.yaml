@@ -333,7 +333,7 @@ services:
     command: celery -A worker.celery_app worker --loglevel=info
     depends_on:
       - rabbitmq
-      - postgres
+      - blog_db
     environment:
       - DATABASE_URL=postgresql+asyncpg://user:password@blog_db:5432/blog_db
       # - MINIO_ENDPOINT=minio:9000
