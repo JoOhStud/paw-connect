@@ -37,6 +37,7 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./paw_connect.json:/tmp/paw_connect.json
+      - ./kc-theme:/opt/keycloak/themes/paw-theme
     networks:
       - traefik_net
 
