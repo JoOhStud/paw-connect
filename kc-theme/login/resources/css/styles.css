@@ -1,6 +1,4 @@
-/* @import url('../../keycloak/lib/zocial/zocial.css');*/
-
-.login-pf body {
+#keycloak-bg {
     background-image: url('../img/bkgrnd.jpg');
     background-position: center center;
     background-attachment: fixed;
@@ -8,64 +6,10 @@
     background-repeat: no-repeat;
 
     color: #fff;
-    font-family: sans-serif;
-    text-shadow: 0px 0px 10px #000;
-    margin: 0px;
+    text-shadow: 0px 0px 3px #000;
+    margin: 0px; 
 }
 
-.login-pf-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-    justify-content: center;
-}
-
-a {
-    color: #fff;
-}
-
-/* Change content to change the title of the page*/
-div#kc-header::after {
-    padding-top: 3px;
-    content: 'PAW CONNECT';
-    font-size: 40px;
-    line-height: 50px;
-    margin-bottom: 15px;
-}
-
-.pf-c-radio label {
-    color: white;
-}
-
-.card-pf {
+.pf-v5-c-login__main {
     background: rgba(0, 0, 0, 0.5);
-    border-top: 2px solid transparent;
-    box-shadow: 0 1px 1px rgba(3, 3, 3, .175);
-    padding: 0 20px;
-    width: 50vw;
-}
-
-div#kc-header-wrapper {
-    display: none;
-}
-div#kc-social-providers h2 {
-    content: "Lub zaloguj się przez";
-}
-div#kc-social-providers {
-    ul li {
-        span {
-            display: none;
-        }
-        a {
-            color: white;
-            font-size: xxx-large;
-        }
-
-    }
-}
-.pf-c-button.pf-m-control {
-    background-color: transparent;
-    --pf-c-button--after--BorderWidth: 0;
 }

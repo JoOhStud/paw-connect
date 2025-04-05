@@ -178,7 +178,7 @@ services:
       - MINIO_BUCKET=user-media
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.user_api.rule=PathPrefix(`/api/users`)"
+      - "traefik.http.routers.user_api.rule=PathPrefix(`/api/users`) || PathPrefix(`/api/services`)"
       - "traefik.http.routers.user_api.entrypoints=web"
       - "traefik.http.routers.user_api.priority=5"
     networks:
